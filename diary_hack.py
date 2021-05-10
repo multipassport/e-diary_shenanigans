@@ -2,7 +2,7 @@ import random
 
 from datacenter.models import Schoolkid, Mark, Chastisement, Lesson, Commendation
 
-praises = (
+PRAISES = (
     'Молодец!',
     'Отлично!',
     'Хорошо!',
@@ -36,7 +36,7 @@ praises = (
     )
 
 
-def fix_marks(kid_name):
+def get_child_model(kid_name):
     try:
         child = Schoolkid.objects.get(full_name__contains=kid_name)
     except Schoolkid.DoesNotExist:
@@ -44,34 +44,28 @@ def fix_marks(kid_name):
     except Schoolkid.MultipleObjectsReturned:
         print('Найдено больше одного совпадения. Уточните имя')
     else:
-        marks = Mark.objects.filter(schoolkid=child, points__in=[2, 3])
-        for mark in marks:
-            mark.points = 5
-            mark.save()
+        return child
+
+
+def fix_marks(kid_name):
+    child = get_child_model(kid_name)
+    marks = Mark.objects.filter(schoolkid=child, points__in=[2, 3])
+    for mark in marks:
+        mark.points = 5
+        mark.save()
 
 
 def remove_chastisements(kid_name):
-    try:
-        child = Schoolkid.objects.get(full_name__contains=kid_name)
-    except Schoolkid.DoesNotExist:
-        print('Такой ученик не существует')
-    except Schoolkid.MultipleObjectsReturned:
-        print('Найдено больше одного совпадения. Уточните имя')
-    else:
-        chasticements = Chastisement.objects.filter(schoolkid=child)
-        for chasticement in chasticements:
-            chasticements.delete()
+    child = get_child_model(kid_name)
+    chasticements = Chastisement.objects.filter(schoolkid=child)
+    for chasticement in chasticements:
+        chasticements.delete()
 
 
-def create_commendation(kid_name, subject_name, praises=praises):
-    text = random.choice(praises)
-    try:
-        child = Schoolkid.objects.get(full_name__contains=kid_name)
-    except Schoolkid.DoesNotExist:
-        print('Такой ученик не существует')
-    except Schoolkid.MultipleObjectsReturned:
-        print('Найдено больше одного совпадения. Уточните имя')
-    else:
+def create_commendation(kid_name, subject_name):
+    text = random.choice(PRAISES)
+    child = get_child_model(kid_name)
+    if child:
         school_grade = child.year_of_study
         group_letter = child.group_letter
         try:
